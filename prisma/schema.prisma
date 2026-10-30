@@ -1,0 +1,145 @@
+// Campus360 Phase 3 & Phase 5B Prisma Schema (Preserved & Extended with Enterprise Auth / RBAC)
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  FACULTY
+  TECHNICIAN
+  DEPARTMENT_MANAGER
+  FACILITIES_ADMIN
+  PROCUREMENT_APPROVER
+  SYSTEM_ADMIN
+}
+
+model User {
+  id                String         @id @default(uuid())
+  email             String         @unique
+  passwordHash      String
+  fullName          String
+  role              Role
+  department        String
+  title             String
+  clearanceLevel    Int            @default(1)
+  emailVerified     Boolean        @default(true)
+  verificationToken String?
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  sessions          RedisSession[]
+  auditLogs         AuditLog[]
+}
+
+model RedisSession {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  tokenFamily      String
+  refreshTokenHash String
+  rotationCount    Int      @default(0)
+  ipAddress        String
+  userAgent        String
+  revoked          Boolean  @default(false)
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  lastRotatedAt    DateTime @default(now())
+}
+
+model Building {
+  id              String       @id
+  code            String       @unique
+  name            String
+  zone            String
+  occupancy       Int
+  maxCapacity     Int
+  powerKw         Float
+  hvacSetpointC   Float
+  currentTempC    Float
+  solarOutputKw   Float
+  airQualityAqi   Int
+  status          String
+  sensorNodes     SensorNode[]
+  complaints      Complaint[]
+  workOrders      WorkOrder[]
+}
+
+model SensorNode {
+  id         String   @id
+  buildingId String
+  building   Building @relation(fields: [buildingId], references: [id])
+  type       String
+  label      String
+  metric     String
+  value      Float
+  unit       String
+  status     String
+  updatedAt  DateTime @default(now())
+}
+
+model Complaint {
+  id             String   @id @default(uuid())
+  buildingId     String
+  building       Building @relation(fields: [buildingId], references: [id])
+  locationDetail String
+  category       String
+  title          String
+  description    String
+  reportedBy     String
+  reporterRole   Role
+  status         String
+  priority       String
+  aiAnalyzed     Boolean  @default(false)
+  aiDiagnosis    Json?
+  createdAt      DateTime @default(now())
+}
+
+model WorkOrder {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  buildingId   String
+  building     Building @relation(fields: [buildingId], references: [id])
+  system       String
+  title        String
+  assignedTo   String
+  priority     String
+  status       String
+  slaHoursLeft Float
+  createdAt    DateTime @default(now())
+}
+
+model ProcurementRequisition {
+  id            String   @id @default(uuid())
+  reqCode       String   @unique
+  itemTitle     String
+  vendor        String
+  department    String
+  buildingId    String
+  amountUsd     Float
+  urgency       String
+  status        String
+  requestedBy   String
+  approvedBy    String?
+  slaCompliance Float
+  createdAt     DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  userEmail String
+  userRole  String
+  action    String
+  module    String
+  ipAddress String
+  status    String
+  metadata  String
+  createdAt DateTime @default(now())
+}

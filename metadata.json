@@ -1,0 +1,6 @@
+{
+  "name": "Campus360 — Enterprise Smart Campus & Digital Twin",
+  "description": "Enterprise smart campus platform with JWT + Refresh Token authentication, 7-role RBAC consoles, interactive 3D WebGL Digital Twin, Socket.IO telemetry, and AI Inspector.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
